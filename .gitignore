@@ -1,0 +1,12 @@
+assets/
+build/
+bin/
+dependencies/
+lib/
+vcpkg_installed/
+cmake-build-debug/
+thirdparty/
+.cache/
+.vs/
+.vscode/
+.idea/

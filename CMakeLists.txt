@@ -2,20 +2,34 @@ cmake_minimum_required(VERSION 3.20)
 
 project(raytracer)
 
+# project(raytracer CXX CUDA)
+
+# set(CMAKE_CXX_STANDARD 23)
+# set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 add_compile_definitions(PROJECT_PATH="${CMAKE_SOURCE_DIR}")
+add_compile_definitions(SHADER_PATH="${CMAKE_SOURCE_DIR}/shaders")
 
 include_directories(src)
-include_directories(thirdparty)
 
-file(GLOB SRC_LIST src/*.cpp)
-file(GLOB SHADER_LIST shaders/*)
+file(GLOB_RECURSE INC_LIST
+    src/*.hpp
+)
 
-add_executable(raytracer ${SRC_LIST})
+file(GLOB_RECURSE SRC_LIST
+    src/*.cpp
+)
 
-find_package(glad CONFIG REQUIRED)
-find_package(glm CONFIG REQUIRED)
+add_executable(raytracer ${INC_LIST} ${SRC_LIST})
+
+# find_package(CUDAToolkit REQUIRED)
+# find_package(OptiXToolkit REQUIRED)
+find_package(Vulkan REQUIRED)
+find_package(glfw3 REQUIRED)
 
 target_link_libraries(raytracer
-    glad::glad
-    glm::glm
+#     cuda
+#     OptiX::OptiX
+    Vulkan::Vulkan
+    glfw
 )

@@ -1,11 +1,18 @@
-#define STB_IMAGE_RESIZE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#define STB_IMAGE_IMPLEMENTATION
+#include <exception>
+#include <iostream>
 
-#include <glfw/glfw3.h>
+#include "Application.hpp"
 
 int main(int argc, const char* argv[])
 {
+	Application app;
+	try {
+		app.run();
+	}
+	catch (const std::exception& e) {
+		std::cerr << e.what() << std::endl;
+		return EXIT_FAILURE;
+	}
 
-	return 0;
+	return EXIT_SUCCESS;
 }

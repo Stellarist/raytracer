@@ -1,35 +1,32 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(raytracer)
+project(OptiXDemo CXX CUDA)
 
-# project(raytracer CXX CUDA)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# set(CMAKE_CXX_STANDARD 23)
-# set(CMAKE_CXX_STANDARD_REQUIRED ON)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-add_compile_definitions(PROJECT_PATH="${CMAKE_SOURCE_DIR}")
-add_compile_definitions(SHADER_PATH="${CMAKE_SOURCE_DIR}/shaders")
+file(GLOB_RECURSE INC_LIST src/*.hpp src/*.h)
+file(GLOB_RECURSE SRC_LIST src/*.cpp src/*.cu)
 
-include_directories(src)
+find_package(OptiX REQUIRED)
 
-file(GLOB_RECURSE INC_LIST
-    src/*.hpp
+add_executable(OptiXDemo
+    ${INC_LIST}
+    ${SRC_LIST}
 )
 
-file(GLOB_RECURSE SRC_LIST
-    src/*.cpp
+target_include_directories(OptiXDemo 
+PRIVATE
+    thirdparty
+    ${OptiX_INCLUDE}
 )
 
-add_executable(raytracer ${INC_LIST} ${SRC_LIST})
-
-# find_package(CUDAToolkit REQUIRED)
-# find_package(OptiXToolkit REQUIRED)
-find_package(Vulkan REQUIRED)
-find_package(glfw3 REQUIRED)
-
-target_link_libraries(raytracer
-#     cuda
-#     OptiX::OptiX
-    Vulkan::Vulkan
-    glfw
+target_link_libraries(OptiXDemo
+PRIVATE
+    ${CUDA_LIBRARIES}
+    ${OptiX_LIBRARY}
+    glad::glad
+    glfw3
 )

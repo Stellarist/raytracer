@@ -21,8 +21,7 @@
 #include <optix_function_table_definition.h>
 
 #include "debug.hpp"
-
-char embedded_ptx_code[];
+#include "utils/PTXCode.hpp"
 
 /*! constructor - performs all setup, including initializing
   optix, creates module, pipeline, programs, SBT, etc. */
@@ -52,7 +51,7 @@ SampleRenderer::SampleRenderer()
   launchParamsBuffer.alloc(1);
   std::cout << "#osc: context, module, pipeline, etc, all set up ..." << std::endl;
 
-  std::cout << "#osc: Optix 7 Sample fully set up" << std::endl;
+  std::cout << "#osc: Optix Sample fully set up" << std::endl;
 }
 
 /*! helper function that initializes optix and checks for errors */
@@ -122,7 +121,8 @@ void SampleRenderer::createModule()
     
   pipelineLinkOptions.maxTraceDepth          = 2;
     
-  const std::string ptxCode = embedded_ptx_code;
+  std::string ptxCode;
+  PTXCode::readFromFile("cuda_compile_ptx_1_generated_main.cu.ptx", ptxCode);
     
   char log[2048];
   size_t sizeof_log = sizeof( log );

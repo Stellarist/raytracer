@@ -11,14 +11,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 file(GLOB_RECURSE INC_LIST src/*.hpp src/*.h)
 file(GLOB_RECURSE SRC_LIST src/*.cpp)
 
-cuda_compile_and_embed(embedded_ptx_code src/main.cu)
-
 find_package(CUDAToolkit REQUIRED)
 find_package(OptiX REQUIRED)
 find_package(glad REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(glm REQUIRED)
 find_package(Stb REQUIRED)
+
+cuda_compile_and_embed(embedded_ptx_code src/main.cu)
 
 add_executable(raytracer
     ${embedded_ptx_code}

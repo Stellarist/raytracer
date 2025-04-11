@@ -3,21 +3,22 @@
 
 #include "LaunchParams.hpp"
 
+extern "C" {
 __constant__ LaunchParams launch_params;
 
-__global__ void __closetHitRadiance()
+__global__ void __closesthit__radiance()
 {
 }
 
-__global__ void __anyHitRadiance()
+__global__ void __anyhit__radiance()
 {
 }
 
-__global__ void __missRadiance()
+__global__ void __miss__radiance()
 {
 }
 
-__global__ void __raygenRenderFrame()
+__global__ void __raygen__renderFrame()
 {
 	if (launch_params.frame_id == 0 &&
         optixGetLaunchIndex().x == 0 &&
@@ -44,4 +45,5 @@ __global__ void __raygenRenderFrame()
     // and write to frame buffer ...
 	const uint32_t fb_index = ix + iy * launch_params.fb_size.x;
 	launch_params.color_buffer[fb_index] = rgba;
+}
 }

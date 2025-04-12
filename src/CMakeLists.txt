@@ -28,17 +28,17 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 OPTIX_add_sample_executable( optixPathTracer target_name
-  optixPathTracer.cu
-  optixPathTracer.cpp
-  optixPathTracer.h
-  OPTIONS -rdc true
-  )
+    raytracer.cu
+    raytracer.cpp
+    raytracer.h
+    OPTIONS -rdc true
+)
 
 target_include_directories(${target_name}
 PRIVATE
   ${CUDA_LIBRARIES}
-  )
+)
 
 target_link_libraries(${target_name}
   ${CUDA_LIBRARIES}
-  )
+)

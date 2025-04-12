@@ -23,7 +23,7 @@ int main(int argc, char const *argv[])
 		std::vector<uint32_t> pixels(fbSize.x * fbSize.y);
 		sample.downloadPixels(pixels.data());
 
-		const std::string fileName = "osc_example2.png";
+		const std::string fileName = "temp.png";
 		stbi_write_png(fileName.c_str(), fbSize.x, fbSize.y, 4,
 		               pixels.data(), fbSize.x * sizeof(uint32_t));
 		std::cout  << std::endl

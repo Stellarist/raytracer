@@ -20,16 +20,14 @@ __global__ void __miss__radiance()
 
 __global__ void __raygen__renderFrame()
 {
-	if (launch_params.frame_id == 0 &&
-        optixGetLaunchIndex().x == 0 &&
-        optixGetLaunchIndex().y == 0) {
-
+  if (!launch_params.frame_id && !optixGetLaunchIndex().x && !optixGetLaunchIndex().y) {
         printf("############################################\n");
-        printf("Hello world from OptiX 7 raygen program!\n(within a %ix%i-sized launch)\n",
+        printf("Hello world from OptiX raygen program!\n(within a %ix%i-sized launch)\n",
 		       launch_params.fb_size.x,
 		       launch_params.fb_size.y);
         printf("############################################\n");
     }    
+
     const int ix = optixGetLaunchIndex().x;
     const int iy = optixGetLaunchIndex().y;
 

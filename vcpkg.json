@@ -1,8 +1,8 @@
 {
-	"dependencies": [
-		"glad",
-		"glfw3",
-		"glm",
-		"stb"
-	]
+  "dependencies": [
+    "glad",
+    "glfw3",
+    "glm",
+    "stb"
+  ]
 }

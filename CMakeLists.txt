@@ -5,9 +5,6 @@ project(raytracer CXX CUDA)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/configure_optix.cmake)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 file(GLOB_RECURSE INC_LIST src/*.hpp src/*.h)
 file(GLOB_RECURSE SRC_LIST src/*.cpp)
 
@@ -38,7 +35,7 @@ PRIVATE
     ${OptiX_LIBRARY}
     CUDA::cudart
     CUDA::cuda_driver
-    glm::glm-header-only
+    glm::glm
     # glad::glad
     # glfw3
 )

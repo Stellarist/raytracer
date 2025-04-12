@@ -27,18 +27,12 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-OPTIX_add_sample_executable( optixPathTracer target_name
-  optixPathTracer.cu
-  optixPathTracer.cpp
-  optixPathTracer.h
-  OPTIONS -rdc true
+add_library( miniz STATIC
+  miniz.c
   )
 
-target_include_directories(${target_name}
-PRIVATE
-  ${CUDA_LIBRARIES}
-  )
-
-target_link_libraries(${target_name}
-  ${CUDA_LIBRARIES}
-  )
+target_include_directories( miniz
+  INTERFACE ..
+  PRIVATE . )
+target_compile_definitions( miniz PRIVATE )
+target_link_libraries( miniz )

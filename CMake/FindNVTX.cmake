@@ -1,7 +1,6 @@
-#
-# SPDX-FileCopyrightText: Copyright (c) 2019 - 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021 -2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
@@ -26,19 +25,38 @@
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
 
-OPTIX_add_sample_executable( optixPathTracer target_name
-  optixPathTracer.cu
-  optixPathTracer.cpp
-  optixPathTracer.h
-  OPTIONS -rdc true
-  )
+# Output variables:
+#   NVTX_FOUND
+#   NVTX_INCLUDE_DIR
 
-target_include_directories(${target_name}
-PRIVATE
-  ${CUDA_LIBRARIES}
-  )
+if( WIN32 )
+    # On Windows, the NVTX headers are in the include directory of the CUDA Toolkit
+    find_path( NVTX_INCLUDE_DIR
+        NAMES device_functions.h
+        PATHS
+            ${CUDA_TOOLKIT_ROOT_DIR}
+            ENV CUDA_PATH
+            ENV CUDA_INC_PATH
+        PATH_SUFFIXES include
+        NO_DEFAULT_PATH
+        )
+elseif( UNIX )
+    # On Linux, the NVTX headers are in a separate 'targets' directory
+    find_path( NVTX_INCLUDE_DIR
+        NAMES nvToolsExt.h
+        PATHS
+            ${CUDA_TOOLKIT_ROOT_DIR}/targets/x86_64-linux/include
+            ENV CUDA_PATH
+            ENV CUDA_INC_PATH
+        PATH_SUFFIXES include
+        NO_DEFAULT_PATH
+        )
+endif()
 
-target_link_libraries(${target_name}
-  ${CUDA_LIBRARIES}
-  )
+if( NVTX_INCLUDE_DIR )
+    set( NVTX_FOUND TRUE )
+endif()
+
+mark_as_advanced( NVTX_INCLUDE_DIR )

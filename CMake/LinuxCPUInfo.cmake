@@ -1,7 +1,6 @@
-#
-# SPDX-FileCopyrightText: Copyright (c) 2019 - 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2008 - 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
@@ -26,19 +25,35 @@
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
 
-OPTIX_add_sample_executable( optixPathTracer target_name
-  optixPathTracer.cu
-  optixPathTracer.cpp
-  optixPathTracer.h
-  OPTIONS -rdc true
-  )
+IF(EXISTS "/proc/cpuinfo")
 
-target_include_directories(${target_name}
-PRIVATE
-  ${CUDA_LIBRARIES}
-  )
+  FILE(READ /proc/cpuinfo PROC_CPUINFO)
 
-target_link_libraries(${target_name}
-  ${CUDA_LIBRARIES}
-  )
+  SET(VENDOR_ID_RX "vendor_id[ \t]*:[ \t]*([a-zA-Z]+)\n")
+  STRING(REGEX MATCH "${VENDOR_ID_RX}" VENDOR_ID "${PROC_CPUINFO}")
+  STRING(REGEX REPLACE "${VENDOR_ID_RX}" "\\1" VENDOR_ID "${VENDOR_ID}")
+
+  SET(CPU_FAMILY_RX "cpu family[ \t]*:[ \t]*([0-9]+)")
+  STRING(REGEX MATCH "${CPU_FAMILY_RX}" CPU_FAMILY "${PROC_CPUINFO}")
+  STRING(REGEX REPLACE "${CPU_FAMILY_RX}" "\\1" CPU_FAMILY "${CPU_FAMILY}")
+
+  SET(MODEL_RX "model[ \t]*:[ \t]*([0-9]+)")
+  STRING(REGEX MATCH "${MODEL_RX}" MODEL "${PROC_CPUINFO}")
+  STRING(REGEX REPLACE "${MODEL_RX}" "\\1" MODEL "${MODEL}")
+
+  SET(FLAGS_RX "flags[ \t]*:[ \t]*([a-zA-Z0-9 _]+)\n")
+  STRING(REGEX MATCH "${FLAGS_RX}" FLAGS "${PROC_CPUINFO}")
+  STRING(REGEX REPLACE "${FLAGS_RX}" "\\1" FLAGS "${FLAGS}")
+
+  # Debug output.
+  IF(LINUX_CPUINFO)
+    MESSAGE(STATUS "LinuxCPUInfo.cmake:")
+    MESSAGE(STATUS "VENDOR_ID : ${VENDOR_ID}")
+    MESSAGE(STATUS "CPU_FAMILY : ${CPU_FAMILY}")
+    MESSAGE(STATUS "MODEL : ${MODEL}")
+    MESSAGE(STATUS "FLAGS : ${FLAGS}")
+  ENDIF(LINUX_CPUINFO)
+
+ENDIF(EXISTS "/proc/cpuinfo")

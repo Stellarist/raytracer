@@ -1,7 +1,6 @@
-#
-# SPDX-FileCopyrightText: Copyright (c) 2019 - 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2008 - 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
@@ -26,19 +25,35 @@
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
 
-OPTIX_add_sample_executable( optixPathTracer target_name
-  optixPathTracer.cu
-  optixPathTracer.cpp
-  optixPathTracer.h
-  OPTIONS -rdc true
-  )
+# This script produces a string variable from the contents of a ptx
+# script.  The variable is defined in the .cc file and the .h file.
 
-target_include_directories(${target_name}
-PRIVATE
-  ${CUDA_LIBRARIES}
-  )
+# This script excepts the following variable to be passed in like
+# -DVAR:TYPE=VALUE
+# 
+# CPP_FILE
+# PTX_FILE
+# VARIABLE_NAME
+# NAMESPACE
+# CUDA_BIN2C_EXECUTABLE
 
-target_link_libraries(${target_name}
-  ${CUDA_LIBRARIES}
+# message("PTX_FILE      = ${PTX_FILE}")
+# message("CPP_FILE      = ${C_FILE}")
+# message("VARIABLE_NAME = ${VARIABLE_NAME}")
+# message("NAMESPACE     = ${NAMESPACE}")
+
+execute_process( COMMAND ${CUDA_BIN2C_EXECUTABLE} -p 0 -st -c -n ${VARIABLE_NAME}_static "${PTX_FILE}"
+  OUTPUT_VARIABLE bindata
+  RESULT_VARIABLE result
+  ERROR_VARIABLE error
   )
+if(result)
+  message(FATAL_ERROR "bin2c error:\n" ${error})
+endif()
+
+set(BODY
+  "${bindata}\n"
+  "namespace ${NAMESPACE} {\n\nstatic const char* const ${VARIABLE_NAME} = reinterpret_cast<const char*>(&${VARIABLE_NAME}_static[0]);\n} // end namespace ${NAMESPACE}\n")
+file(WRITE ${CPP_FILE} "${BODY}")

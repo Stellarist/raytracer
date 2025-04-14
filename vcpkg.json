@@ -1,5 +1,14 @@
 {
-  "dependencies": [
-    "glad"
-  ]
+	"dependencies": [
+		"glad",
+		"glfw3",
+		"miniz",
+		{
+			"name": "imgui",
+			"features": [
+				"opengl3-binding",
+				"glfw-binding"
+			]
+		}
+	]
 }

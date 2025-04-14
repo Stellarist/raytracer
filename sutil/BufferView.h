@@ -31,38 +31,29 @@
 
 #pragma once
 
-#ifndef SUTILAPI
-#	if sutil_EXPORTS /* Set by CMAKE */
-#		if defined(_WIN32) || defined(_WIN64)
-#			define SUTILAPI __declspec(dllexport)
-#			define SUTILCLASSAPI
-#		elif defined(linux) || defined(__linux__) || defined(__CYGWIN__)
-#			define SUTILAPI __attribute__((visibility("default")))
-#			define SUTILCLASSAPI SUTILAPI
-#		elif defined(__APPLE__) && defined(__MACH__)
-#			define SUTILAPI __attribute__((visibility("default")))
-#			define SUTILCLASSAPI SUTILAPI
-#		else
-#			error "CODE FOR THIS OS HAS NOT YET BEEN DEFINED"
-#		endif
+#include <Preprocessor.h>
 
-#	else /* sutil_EXPORTS */
+template <typename T>
+struct BufferView {
+	CUdeviceptr data              CONST_STATIC_INIT(0);
+	unsigned int count            CONST_STATIC_INIT(0);
+	unsigned short byte_stride    CONST_STATIC_INIT(0);
+	unsigned short elmt_byte_size CONST_STATIC_INIT(0);
 
-#		if defined(_WIN32) || defined(_WIN64)
-#			define SUTILAPI __declspec(dllimport)
-#			define SUTILCLASSAPI
-#		elif defined(linux) || defined(__linux__) || defined(__CYGWIN__)
-#			define SUTILAPI __attribute__((visibility("default")))
-#			define SUTILCLASSAPI SUTILAPI
-#		elif defined(__APPLE__) && defined(__MACH__)
-#			define SUTILAPI __attribute__((visibility("default")))
-#			define SUTILCLASSAPI SUTILAPI
-#		elif defined(__CUDACC_RTC__)
-#			define SUTILAPI
-#			define SUTILCLASSAPI
-#		else
-#			error "CODE FOR THIS OS HAS NOT YET BEEN DEFINED"
-#		endif
+	SUTIL_HOSTDEVICE bool isValid() const
+	{
+		return static_cast<bool>(data);
+	}
 
-#	endif /* sutil_EXPORTS */
-#endif
+	SUTIL_HOSTDEVICE operator bool() const
+	{
+		return isValid();
+	}
+
+	SUTIL_HOSTDEVICE const T& operator[](unsigned int idx) const
+	{
+		return *reinterpret_cast<T*>(data + idx * (byte_stride ? byte_stride : sizeof(T)));
+	}
+};
+
+typedef BufferView<unsigned int> GenericBufferView;

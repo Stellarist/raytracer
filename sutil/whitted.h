@@ -28,41 +28,60 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 #pragma once
 
-#ifndef SUTILAPI
-#	if sutil_EXPORTS /* Set by CMAKE */
-#		if defined(_WIN32) || defined(_WIN64)
-#			define SUTILAPI __declspec(dllexport)
-#			define SUTILCLASSAPI
-#		elif defined(linux) || defined(__linux__) || defined(__CYGWIN__)
-#			define SUTILAPI __attribute__((visibility("default")))
-#			define SUTILCLASSAPI SUTILAPI
-#		elif defined(__APPLE__) && defined(__MACH__)
-#			define SUTILAPI __attribute__((visibility("default")))
-#			define SUTILCLASSAPI SUTILAPI
-#		else
-#			error "CODE FOR THIS OS HAS NOT YET BEEN DEFINED"
-#		endif
+#include <vector_types.h>
 
-#	else /* sutil_EXPORTS */
+#include <BufferView.h>
+#include <GeometryData.h>
+#include <Light.h>
+#include <MaterialData.h>
 
-#		if defined(_WIN32) || defined(_WIN64)
-#			define SUTILAPI __declspec(dllimport)
-#			define SUTILCLASSAPI
-#		elif defined(linux) || defined(__linux__) || defined(__CYGWIN__)
-#			define SUTILAPI __attribute__((visibility("default")))
-#			define SUTILCLASSAPI SUTILAPI
-#		elif defined(__APPLE__) && defined(__MACH__)
-#			define SUTILAPI __attribute__((visibility("default")))
-#			define SUTILCLASSAPI SUTILAPI
-#		elif defined(__CUDACC_RTC__)
-#			define SUTILAPI
-#			define SUTILCLASSAPI
-#		else
-#			error "CODE FOR THIS OS HAS NOT YET BEEN DEFINED"
-#		endif
+namespace whitted
+{
 
-#	endif /* sutil_EXPORTS */
-#endif
+const unsigned int NUM_ATTRIBUTE_VALUES = 4u;
+const unsigned int NUM_PAYLOAD_VALUES = 4u;
+const unsigned int MAX_TRACE_DEPTH = 8u;
+
+struct HitGroupData {
+	GeometryData geometry_data;
+	MaterialData material_data;
+};
+
+enum RayType {
+	RAY_TYPE_RADIANCE = 0,
+	RAY_TYPE_OCCLUSION = 1,
+	RAY_TYPE_COUNT = 2
+};
+
+struct LaunchParams {
+	unsigned int width;
+	unsigned int height;
+	unsigned int subframe_index;
+	float4*      accum_buffer;
+	uchar4*      frame_buffer;
+	int          max_depth;
+	float        scene_epsilon;
+
+	float3 eye;
+	float3 U;
+	float3 V;
+	float3 W;
+
+	BufferView<Light>      lights;
+	float3                 miss_color;
+	OptixTraversableHandle handle;
+};
+
+struct PayloadRadiance {
+	float3 result;
+	float  importance;
+	int    depth;
+};
+
+struct PayloadOcclusion {
+	float3 result;
+};
+
+}        // end namespace whitted

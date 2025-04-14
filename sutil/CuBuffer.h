@@ -36,277 +36,268 @@
 #include <vector>
 
 #ifndef __CUDACC__
-#ifndef CUDA_CHECK
-#include <sutil/Exception.h>
-#endif
+#	ifndef CUDA_CHECK
+#		include <Exception.h>
+#	endif
 #else
-#define CUDA_CHECK(x) x
+#	define CUDA_CHECK(x) x
 #endif
-
 
 template <typename T = char>
-class CuBuffer
-{
+class CuBuffer {
 public:
-    typedef T ElemType;
-    typedef const T* constTPtr;
+	typedef T        ElemType;
+	typedef const T* constTPtr;
 
-    CuBuffer( size_t count = 0 )
-    {
-        alloc( count );
-    }
-    CuBuffer( size_t count, const T* data )
-    {
-        alloc( count );
-        upload( data );
-    }
-    CuBuffer( std::initializer_list<T> data )
-    {
-        alloc( data.size() );
-        upload( data.begin() );
-    }
-    CuBuffer( const std::vector<T>& data )
-    {
-        alloc( data.size() );
-        upload( data.data() );
-    }
-    ~CuBuffer()
-    {
-        free();
-    }
+	CuBuffer(size_t count = 0)
+	{
+		alloc(count);
+	}
+	CuBuffer(size_t count, const T* data)
+	{
+		alloc(count);
+		upload(data);
+	}
+	CuBuffer(std::initializer_list<T> data)
+	{
+		alloc(data.size());
+		upload(data.begin());
+	}
+	CuBuffer(const std::vector<T>& data)
+	{
+		alloc(data.size());
+		upload(data.data());
+	}
+	~CuBuffer()
+	{
+		free();
+	}
 
+	CuBuffer(CuBuffer&& other)
+	{
+		swap(other);
+	}
 
-    CuBuffer(CuBuffer&& other)
-    {
-        swap( other );
-    }
+	CuBuffer& operator=(CuBuffer&& other)
+	{
+		swap(other);
+		return *this;
+	}
 
-    CuBuffer& operator=(CuBuffer&& other)
-    {
-        swap( other );
-        return *this;
-    }
+	void swap(CuBuffer& other)        // nothrow
+	{
+		// enable ADL (not necessary in our case, but good practice)
+		using std::swap;
 
-    void swap( CuBuffer& other )  // nothrow
-    {
-        // enable ADL (not necessary in our case, but good practice)
-        using std::swap;
-
-        // by swapping the members of two objects,
-        // the two objects are effectively swapped
-        swap(m_ptr, other.m_ptr);
-        swap(m_count, other.m_count);
-        swap(m_allocCount, other.m_allocCount);
-    }
+		// by swapping the members of two objects,
+		// the two objects are effectively swapped
+		swap(m_ptr, other.m_ptr);
+		swap(m_count, other.m_count);
+		swap(m_allocCount, other.m_allocCount);
+	}
 
 protected:
-    CuBuffer(const CuBuffer&) = delete;
-    CuBuffer& operator=(const CuBuffer&) = delete;
+	CuBuffer(const CuBuffer&) = delete;
+	CuBuffer& operator=(const CuBuffer&) = delete;
 
 public:
-    void alloc( size_t count )
-    {
-        if( m_allocCount == count )
-        {
-            m_count = count;
-            return;
-        }
-        free();
-        m_allocCount = m_count = count;
-        if( m_allocCount )
-        {
-            CUDA_CHECK( cudaMalloc( (void**)&m_ptr, m_allocCount * sizeof( T ) ) );
-        }
-    }
-    void allocIfRequired( size_t count )
-    {
-        if( count <= m_allocCount )
-        {
-            m_count = count;
-            return;
-        }
-        alloc( count );
-    }
+	void alloc(size_t count)
+	{
+		if (m_allocCount == count) {
+			m_count = count;
+			return;
+		}
+		free();
+		m_allocCount = m_count = count;
+		if (m_allocCount) {
+			CUDA_CHECK(cudaMalloc((void**) &m_ptr, m_allocCount * sizeof(T)));
+		}
+	}
+	void allocIfRequired(size_t count)
+	{
+		if (count <= m_allocCount) {
+			m_count = count;
+			return;
+		}
+		alloc(count);
+	}
 
-    T* get() { return m_ptr; }
-    const T* get() const { return m_ptr; }
-    T* get( size_t index ) { return m_ptr + index; }
-    const T* get( size_t index ) const { return m_ptr + index; }
-    // allows for usage as l-value, similar to "&buffer.get()", however, this solution avoids gcc warning "-Wstrict-aliasing" and clang warning "-Wreturn-stack-address"
-    const constTPtr* getAsArray() const { return &m_ptr; }
+	T*       get() { return m_ptr; }
+	const T* get() const { return m_ptr; }
+	T*       get(size_t index) { return m_ptr + index; }
+	const T* get(size_t index) const { return m_ptr + index; }
+	// allows for usage as l-value, similar to "&buffer.get()", however, this solution avoids gcc warning "-Wstrict-aliasing" and clang warning "-Wreturn-stack-address"
+	const constTPtr* getAsArray() const { return &m_ptr; }
 
-    CUdeviceptr getCU() { return reinterpret_cast<CUdeviceptr>( m_ptr ); }
-    CUdeviceptr getCU( size_t index ) { return reinterpret_cast<CUdeviceptr>( m_ptr + index ); }
-    // allows for usage as l-value, similar to "&buffer.get()", however, this solution avoids gcc warning "-Wstrict-aliasing" and clang warning "-Wreturn-stack-address"
-    const CUdeviceptr* getCUAsArray() const { return reinterpret_cast<const CUdeviceptr*>( &m_ptr ); }
+	CUdeviceptr getCU() { return reinterpret_cast<CUdeviceptr>(m_ptr); }
+	CUdeviceptr getCU(size_t index) { return reinterpret_cast<CUdeviceptr>(m_ptr + index); }
+	// allows for usage as l-value, similar to "&buffer.get()", however, this solution avoids gcc warning "-Wstrict-aliasing" and clang warning "-Wreturn-stack-address"
+	const CUdeviceptr* getCUAsArray() const { return reinterpret_cast<const CUdeviceptr*>(&m_ptr); }
 
-    void free()
-    {
-        m_count      = 0;
-        m_allocCount = 0;
-        if( m_ptr )
-            CUDA_CHECK( cudaFree( m_ptr ) );
-        m_ptr = nullptr;
-    }
-    CUdeviceptr release()
-    {
-        m_count             = 0;
-        m_allocCount        = 0;
-        CUdeviceptr current = reinterpret_cast<CUdeviceptr>( m_ptr );
-        m_ptr               = nullptr;
-        return current;
-    }
-    void allocAndUpload( std::initializer_list<T> data )
-    {
-        alloc( data.size() );
-        upload( data );
-    }
-    void allocAndUpload( const std::vector<T>& data )
-    {
-        alloc( data.size() );
-        upload( data.data() );
-    }
-    void allocAndUpload( size_t count, const T* data )
-    {
-        alloc( count );
-        upload( data );
-    }
-    void upload( const T* data )
-    {
-        CUDA_CHECK( cudaMemcpy( m_ptr, data, m_count * sizeof( T ), cudaMemcpyHostToDevice ) );
-    }
-    void upload( std::initializer_list<T> data )
-    {
-        assert( data.size() <= m_count );
-        CUDA_CHECK( cudaMemcpy( m_ptr, data.begin(), data.size() * sizeof( T ), cudaMemcpyHostToDevice ) );
-    }
-    void uploadSub( size_t count, size_t offset, const T* data )
-    {
-        assert( count + offset <= m_count );
-        CUDA_CHECK( cudaMemcpy( m_ptr + offset, data, count * sizeof( T ), cudaMemcpyHostToDevice ) );
-    }
-    void uploadSub( size_t offset, std::initializer_list<T> data )
-    {
-        assert( data.size() + offset <= m_count );
-        CUDA_CHECK( cudaMemcpy( m_ptr + offset, data.begin(), data.size() * sizeof( T ), cudaMemcpyHostToDevice ) );
-    }
-    void uploadAsync( const T& data, CUstream stream = 0 )
-    {
-        CUDA_CHECK( cudaMemcpyAsync( m_ptr, &data, sizeof( T ), cudaMemcpyHostToDevice, stream ) );
-    }
-    void uploadAsync( const T* data, CUstream stream = 0 )
-    {
-        CUDA_CHECK( cudaMemcpyAsync( m_ptr, data, m_count * sizeof( T ), cudaMemcpyHostToDevice, stream ) );
-    }
-    void uploadAsync( std::initializer_list<T> data, CUstream stream = 0 )
-    {
-        assert( data.size() <= m_count );
-        CUDA_CHECK( cudaMemcpyAsync( m_ptr, data.begin(), data.size() * sizeof( T ), cudaMemcpyHostToDevice, stream ) );
-    }
-    void uploadSubAsync( size_t count, size_t offset, const T* data, CUstream stream = 0 )
-    {
-        assert( count + offset <= m_count );
-        CUDA_CHECK( cudaMemcpyAsync( m_ptr + offset, data, count * sizeof( T ), cudaMemcpyHostToDevice, stream ) );
-    }
-    void uploadSubAsync( size_t offset, std::initializer_list<T> data, CUstream stream = 0 )
-    {
-        assert( data.size() + offset <= m_count );
-        CUDA_CHECK( cudaMemcpyAsync( m_ptr + offset, data.begin(), data.size() * sizeof( T ), cudaMemcpyHostToDevice, stream ) );
-    }
+	void free()
+	{
+		m_count = 0;
+		m_allocCount = 0;
+		if (m_ptr)
+			CUDA_CHECK(cudaFree(m_ptr));
+		m_ptr = nullptr;
+	}
+	CUdeviceptr release()
+	{
+		m_count = 0;
+		m_allocCount = 0;
+		CUdeviceptr current = reinterpret_cast<CUdeviceptr>(m_ptr);
+		m_ptr = nullptr;
+		return current;
+	}
+	void allocAndUpload(std::initializer_list<T> data)
+	{
+		alloc(data.size());
+		upload(data);
+	}
+	void allocAndUpload(const std::vector<T>& data)
+	{
+		alloc(data.size());
+		upload(data.data());
+	}
+	void allocAndUpload(size_t count, const T* data)
+	{
+		alloc(count);
+		upload(data);
+	}
+	void upload(const T* data)
+	{
+		CUDA_CHECK(cudaMemcpy(m_ptr, data, m_count * sizeof(T), cudaMemcpyHostToDevice));
+	}
+	void upload(std::initializer_list<T> data)
+	{
+		assert(data.size() <= m_count);
+		CUDA_CHECK(cudaMemcpy(m_ptr, data.begin(), data.size() * sizeof(T), cudaMemcpyHostToDevice));
+	}
+	void uploadSub(size_t count, size_t offset, const T* data)
+	{
+		assert(count + offset <= m_count);
+		CUDA_CHECK(cudaMemcpy(m_ptr + offset, data, count * sizeof(T), cudaMemcpyHostToDevice));
+	}
+	void uploadSub(size_t offset, std::initializer_list<T> data)
+	{
+		assert(data.size() + offset <= m_count);
+		CUDA_CHECK(cudaMemcpy(m_ptr + offset, data.begin(), data.size() * sizeof(T), cudaMemcpyHostToDevice));
+	}
+	void uploadAsync(const T& data, CUstream stream = 0)
+	{
+		CUDA_CHECK(cudaMemcpyAsync(m_ptr, &data, sizeof(T), cudaMemcpyHostToDevice, stream));
+	}
+	void uploadAsync(const T* data, CUstream stream = 0)
+	{
+		CUDA_CHECK(cudaMemcpyAsync(m_ptr, data, m_count * sizeof(T), cudaMemcpyHostToDevice, stream));
+	}
+	void uploadAsync(std::initializer_list<T> data, CUstream stream = 0)
+	{
+		assert(data.size() <= m_count);
+		CUDA_CHECK(cudaMemcpyAsync(m_ptr, data.begin(), data.size() * sizeof(T), cudaMemcpyHostToDevice, stream));
+	}
+	void uploadSubAsync(size_t count, size_t offset, const T* data, CUstream stream = 0)
+	{
+		assert(count + offset <= m_count);
+		CUDA_CHECK(cudaMemcpyAsync(m_ptr + offset, data, count * sizeof(T), cudaMemcpyHostToDevice, stream));
+	}
+	void uploadSubAsync(size_t offset, std::initializer_list<T> data, CUstream stream = 0)
+	{
+		assert(data.size() + offset <= m_count);
+		CUDA_CHECK(cudaMemcpyAsync(m_ptr + offset, data.begin(), data.size() * sizeof(T), cudaMemcpyHostToDevice, stream));
+	}
 
-    void download( T* data ) const
-    {
-        CUDA_CHECK( cudaMemcpy( data, m_ptr, m_count * sizeof( T ), cudaMemcpyDeviceToHost ) );
-    }
+	void download(T* data) const
+	{
+		CUDA_CHECK(cudaMemcpy(data, m_ptr, m_count * sizeof(T), cudaMemcpyDeviceToHost));
+	}
 
-    void download( std::vector<T>& vec ) const
-    {
-        vec.resize( m_count );
-        CUDA_CHECK( cudaMemcpy( vec.data(), m_ptr, m_count * sizeof( T ), cudaMemcpyDeviceToHost ) );
-    }
+	void download(std::vector<T>& vec) const
+	{
+		vec.resize(m_count);
+		CUDA_CHECK(cudaMemcpy(vec.data(), m_ptr, m_count * sizeof(T), cudaMemcpyDeviceToHost));
+	}
 
-    std::vector<T> download() const
-    {
-        std::vector<T> result( m_count );
-        download( result.data() );
-        return result;
-    }
-    void downloadSub( size_t count, size_t offset, T* data ) const
-    {
-        assert( count + offset <= m_count );
-        CUDA_CHECK( cudaMemcpy( data, m_ptr + offset, count * sizeof( T ), cudaMemcpyDeviceToHost ) );
-    }
-    void downloadAsync( T* data, CUstream stream = 0 ) const
-    {
-        CUDA_CHECK( cudaMemcpyAsync( data, m_ptr, m_count * sizeof( T ), cudaMemcpyDeviceToHost, stream ) );
-    }
-    void downloadSubAsync( size_t count, size_t offset, T* data, CUstream stream = 0  ) const
-    {
-        assert( count + offset <= m_count );
-        CUDA_CHECK( cudaMemcpyAsync( data, m_ptr + offset, count * sizeof( T ), cudaMemcpyDeviceToHost, stream ) );
-    }
+	std::vector<T> download() const
+	{
+		std::vector<T> result(m_count);
+		download(result.data());
+		return result;
+	}
+	void downloadSub(size_t count, size_t offset, T* data) const
+	{
+		assert(count + offset <= m_count);
+		CUDA_CHECK(cudaMemcpy(data, m_ptr + offset, count * sizeof(T), cudaMemcpyDeviceToHost));
+	}
+	void downloadAsync(T* data, CUstream stream = 0) const
+	{
+		CUDA_CHECK(cudaMemcpyAsync(data, m_ptr, m_count * sizeof(T), cudaMemcpyDeviceToHost, stream));
+	}
+	void downloadSubAsync(size_t count, size_t offset, T* data, CUstream stream = 0) const
+	{
+		assert(count + offset <= m_count);
+		CUDA_CHECK(cudaMemcpyAsync(data, m_ptr + offset, count * sizeof(T), cudaMemcpyDeviceToHost, stream));
+	}
 
-    void memset( char data )
-    {
-        CUDA_CHECK( cudaMemset( m_ptr, data, m_count * sizeof( T ) ) );
-    }
-    template<typename U>
-    void copy( const CuBuffer<U>& other )
-    {
-        assert( other.byteSize() == byteSize() );
-        CUDA_CHECK( cudaMemcpy( m_ptr, other.get(), m_count * sizeof( T ), cudaMemcpyDeviceToDevice ) );
-    }
-    void copy( const T* data )
-    {
-        CUDA_CHECK( cudaMemcpy( m_ptr, data, m_count * sizeof( T ), cudaMemcpyDeviceToDevice ) );
-    }
+	void memset(char data)
+	{
+		CUDA_CHECK(cudaMemset(m_ptr, data, m_count * sizeof(T)));
+	}
+	template <typename U>
+	void copy(const CuBuffer<U>& other)
+	{
+		assert(other.byteSize() == byteSize());
+		CUDA_CHECK(cudaMemcpy(m_ptr, other.get(), m_count * sizeof(T), cudaMemcpyDeviceToDevice));
+	}
+	void copy(const T* data)
+	{
+		CUDA_CHECK(cudaMemcpy(m_ptr, data, m_count * sizeof(T), cudaMemcpyDeviceToDevice));
+	}
 
-    void resize( size_t size )
-    {
-        if( m_allocCount < size )
-        {
-            CuBuffer<T> temp_buffer(size);
-            CUDA_CHECK( cudaMemcpy( temp_buffer.m_ptr, m_ptr, m_count * sizeof( T ), cudaMemcpyDeviceToDevice ) );
-            this->swap( temp_buffer );
-        }
-        else
-        {
-            m_count = size;
-        }
-    }
+	void resize(size_t size)
+	{
+		if (m_allocCount < size) {
+			CuBuffer<T> temp_buffer(size);
+			CUDA_CHECK(cudaMemcpy(temp_buffer.m_ptr, m_ptr, m_count * sizeof(T), cudaMemcpyDeviceToDevice));
+			this->swap(temp_buffer);
+		} else {
+			m_count = size;
+		}
+	}
 
-    void set( int value = 0 ) { CUDA_CHECK( cudaMemset( m_ptr, value, m_count * sizeof( T ) ) ); }
+	void set(int value = 0) { CUDA_CHECK(cudaMemset(m_ptr, value, m_count * sizeof(T))); }
 
-    size_t size() const { return m_count; }
-    size_t byteSize() const { return m_count * sizeof( T ); }
-    size_t capacity() const { return m_allocCount; }
-    size_t capacityByteSize() const { return m_allocCount * sizeof( T ); }
-    bool   empty() const { return m_count == 0; }
+	size_t size() const { return m_count; }
+	size_t byteSize() const { return m_count * sizeof(T); }
+	size_t capacity() const { return m_allocCount; }
+	size_t capacityByteSize() const { return m_allocCount * sizeof(T); }
+	bool   empty() const { return m_count == 0; }
 
-    static unsigned int stride() { return sizeof( T ); }
+	static unsigned int stride() { return sizeof(T); }
 
 public:
-    static size_t roundUp( size_t i, size_t alignment )
-    {
-        return ( ( i + alignment - 1 ) / alignment ) * alignment;
-    }
-    static size_t pool( size_t sizeA, size_t sizeB, size_t alignmentB, size_t& offsetB )
-    {
-        offsetB = roundUp( sizeA, alignmentB );
-        return offsetB + sizeB;
-    }
-    static size_t pool( size_t sizeA, size_t sizeB, size_t alignmentB, size_t& offsetB, size_t sizeC, size_t alignmentC, size_t& offsetC )
-    {
-        offsetC = roundUp( pool(sizeA, sizeB, alignmentB, offsetB), alignmentC );
-        return offsetC + sizeC;
-    }
+	static size_t roundUp(size_t i, size_t alignment)
+	{
+		return ((i + alignment - 1) / alignment) * alignment;
+	}
+	static size_t pool(size_t sizeA, size_t sizeB, size_t alignmentB, size_t& offsetB)
+	{
+		offsetB = roundUp(sizeA, alignmentB);
+		return offsetB + sizeB;
+	}
+	static size_t pool(size_t sizeA, size_t sizeB, size_t alignmentB, size_t& offsetB, size_t sizeC, size_t alignmentC, size_t& offsetC)
+	{
+		offsetC = roundUp(pool(sizeA, sizeB, alignmentB, offsetB), alignmentC);
+		return offsetC + sizeC;
+	}
 
 private:
-    size_t m_count      = 0;
-    size_t m_allocCount = 0;
-    T*     m_ptr        = nullptr;
+	size_t m_count = 0;
+	size_t m_allocCount = 0;
+	T*     m_ptr = nullptr;
 };
 
 #ifdef __CUDACC__
-#undef CUDA_CHECK
+#	undef CUDA_CHECK
 #endif

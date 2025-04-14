@@ -209,10 +209,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 set(OptiX_INSTALL_DIR "C:/ProgramData/NVIDIA Corporation/OptiX SDK 9.0.0" CACHE PATH "Path to OptiX installed location.")
 find_package(OptiX REQUIRED)
 
-include_directories(
-	"${OptiX_INCLUDE}"
-	"${CMAKE_CURRENT_SOURCE_DIR}/cuda"
-)
+include_directories(${OptiX_INCLUDE})
 
 if( NOT SAMPLES_INPUT_ENABLE_OPTIXIR_SUPPORT AND SAMPLES_INPUT_GENERATE_OPTIXIR )
 	message( SEND_ERROR "Must enable SAMPLES_INPUT_ENABLE_OPTIXIR_SUPPORT to enable SAMPLES_INPUT_GENERATE_OPTIXIR" )
@@ -252,7 +249,8 @@ endforeach()
 
 configure_file(sampleConfig.h.in sampleConfig.h @ONLY)
 
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}
+include_directories(
+	${CMAKE_CURRENT_SOURCE_DIR}
 	"${CMAKE_BINARY_DIR}/include"
 	${CMAKE_CURRENT_BINARY_DIR}
 	${CUDA_INCLUDE_DIRS}
@@ -328,9 +326,7 @@ function(OPTIX_add_sample_executable target_name_base target_name_var)
     )
 
 	target_link_libraries(${target_name}
-		${GLFW_LIB_NAME}
-		imgui
-		sutil_7_sdk
+		sutil
 	)
 
 	set_target_properties(${target_name}
@@ -340,8 +336,16 @@ function(OPTIX_add_sample_executable target_name_base target_name_var)
 	)
 endfunction()
 
+include_directories(C:/Data/repos/codes/raytracer/build/vcpkg_installed/x64-windows/include)
+include_directories(thirdparty)
+include_directories(sutil)
+
+find_package(glad REQUIRED)
+find_package(glfw3 REQUIRED)
+find_package(imgui REQUIRED)
+find_package(miniz REQUIRED)
+
 add_subdirectory(src)
 add_subdirectory(sutil)
-add_subdirectory(support)
 
 set(PASSED_FIRST_CONFIGURE ON CACHE INTERNAL "Already Configured once?")

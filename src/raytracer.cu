@@ -1,9 +1,9 @@
 #include <optix.h>
 
-#include "random.h"
 #include "raytracer.h"
 
-#include <cuda/helpers.h>
+#include <helpers.h>
+#include <sutil/random.h>
 #include <sutil/vec_math.h>
 
 extern "C"

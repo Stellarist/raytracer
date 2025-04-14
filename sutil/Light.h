@@ -28,41 +28,38 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 #pragma once
+#include <Preprocessor.h>
 
-#ifndef SUTILAPI
-#	if sutil_EXPORTS /* Set by CMAKE */
-#		if defined(_WIN32) || defined(_WIN64)
-#			define SUTILAPI __declspec(dllexport)
-#			define SUTILCLASSAPI
-#		elif defined(linux) || defined(__linux__) || defined(__CYGWIN__)
-#			define SUTILAPI __attribute__((visibility("default")))
-#			define SUTILCLASSAPI SUTILAPI
-#		elif defined(__APPLE__) && defined(__MACH__)
-#			define SUTILAPI __attribute__((visibility("default")))
-#			define SUTILCLASSAPI SUTILAPI
-#		else
-#			error "CODE FOR THIS OS HAS NOT YET BEEN DEFINED"
-#		endif
+struct Light {
+	Light() {}
 
-#	else /* sutil_EXPORTS */
+	enum class Falloff : int {
+		NONE = 0,
+		LINEAR,
+		QUADRATIC
+	};
 
-#		if defined(_WIN32) || defined(_WIN64)
-#			define SUTILAPI __declspec(dllimport)
-#			define SUTILCLASSAPI
-#		elif defined(linux) || defined(__linux__) || defined(__CYGWIN__)
-#			define SUTILAPI __attribute__((visibility("default")))
-#			define SUTILCLASSAPI SUTILAPI
-#		elif defined(__APPLE__) && defined(__MACH__)
-#			define SUTILAPI __attribute__((visibility("default")))
-#			define SUTILCLASSAPI SUTILAPI
-#		elif defined(__CUDACC_RTC__)
-#			define SUTILAPI
-#			define SUTILCLASSAPI
-#		else
-#			error "CODE FOR THIS OS HAS NOT YET BEEN DEFINED"
-#		endif
+	enum class Type : int {
+		POINT = 0,
+		AMBIENT = 1
+	};
 
-#	endif /* sutil_EXPORTS */
-#endif
+	struct Point {
+		float3 color    CONST_STATIC_INIT({1.0f, 1.0f, 1.0f});
+		float intensity CONST_STATIC_INIT(1.0f);
+		float3 position CONST_STATIC_INIT({});
+		Falloff falloff CONST_STATIC_INIT(Falloff::QUADRATIC);
+	};
+
+	struct Ambient {
+		float3 color CONST_STATIC_INIT({1.0f, 1.0f, 1.0f});
+	};
+
+	Type type;
+
+	union {
+		Point   point;
+		Ambient ambient;
+	};
+};

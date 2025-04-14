@@ -7,9 +7,14 @@ OPTIX_add_sample_executable(raytracer target_name
 
 target_include_directories(${target_name}
 PRIVATE
-  ${CUDA_LIBRARIES}
+	${CUDA_LIBRARIES}
 )
 
+find_package(glad REQUIRED)
 target_link_libraries(${target_name}
-  ${CUDA_LIBRARIES}
+	${CUDA_LIBRARIES}
+	glad::glad
+	glfw
+	imgui::imgui
+	miniz::miniz
 )

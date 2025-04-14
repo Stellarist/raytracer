@@ -1,6 +1,6 @@
 /*
 
- * SPDX-FileCopyrightText: Copyright (c) 2019 - 2024  NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2022 - 2024  NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,41 +28,29 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 #pragma once
 
-#ifndef SUTILAPI
-#	if sutil_EXPORTS /* Set by CMAKE */
-#		if defined(_WIN32) || defined(_WIN64)
-#			define SUTILAPI __declspec(dllexport)
-#			define SUTILCLASSAPI
-#		elif defined(linux) || defined(__linux__) || defined(__CYGWIN__)
-#			define SUTILAPI __attribute__((visibility("default")))
-#			define SUTILCLASSAPI SUTILAPI
-#		elif defined(__APPLE__) && defined(__MACH__)
-#			define SUTILAPI __attribute__((visibility("default")))
-#			define SUTILCLASSAPI SUTILAPI
-#		else
-#			error "CODE FOR THIS OS HAS NOT YET BEEN DEFINED"
-#		endif
+#include <LocalGeometry.h>
+#include <MaterialData.h>
 
-#	else /* sutil_EXPORTS */
+//------------------------------------------------------------------------------
+//
+//
+//
+//------------------------------------------------------------------------------
 
-#		if defined(_WIN32) || defined(_WIN64)
-#			define SUTILAPI __declspec(dllimport)
-#			define SUTILCLASSAPI
-#		elif defined(linux) || defined(__linux__) || defined(__CYGWIN__)
-#			define SUTILAPI __attribute__((visibility("default")))
-#			define SUTILCLASSAPI SUTILAPI
-#		elif defined(__APPLE__) && defined(__MACH__)
-#			define SUTILAPI __attribute__((visibility("default")))
-#			define SUTILCLASSAPI SUTILAPI
-#		elif defined(__CUDACC_RTC__)
-#			define SUTILAPI
-#			define SUTILCLASSAPI
-#		else
-#			error "CODE FOR THIS OS HAS NOT YET BEEN DEFINED"
-#		endif
-
-#	endif /* sutil_EXPORTS */
-#endif
+template <typename T>
+__device__ __forceinline__ T sampleTexture(MaterialData::Texture tex, const LocalGeometry& geom)
+{
+	if (tex.tex) {
+		const float2 UV = geom.texcoord[tex.texcoord].UV * tex.texcoord_scale;
+		const float2 rotation = tex.texcoord_rotation;
+		const float2 UV_trans = make_float2(
+		                            dot(UV, make_float2(rotation.y, rotation.x)),
+		                            dot(UV, make_float2(-rotation.x, rotation.y))) +
+		                        tex.texcoord_offset;
+		return tex2D<float4>(tex.tex, UV_trans.x, UV_trans.y);
+	} else {
+		return T();
+	}
+}
